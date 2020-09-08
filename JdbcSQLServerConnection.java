@@ -195,16 +195,16 @@ public class JdbcSQLServerConnection {
             databaseName = "sampledb";
         }
         //Enter username
-        System.out.print("Enter Username (blank for \'ch3l\'): ");
+        System.out.print("Enter Username (blank for \'username\'): ");
         String username = new String(sc.nextLine());
         if (username.equals("")) {
-            username = "ch3l";
+            username = "username";
         }
         //Enter password
-        System.out.print("Enter Password (blank for \'KawaiiNeko1@#\'): ");
+        System.out.print("Enter Password (blank for \'password\'): ");
         String password = new String(sc.nextLine());
         if (password.equals("")) {
-            password = "KawaiiNeko1@#";
+            password = "password";
         }
         
         char key_input = 'Y';
