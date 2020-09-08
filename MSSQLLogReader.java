@@ -28,6 +28,7 @@ public class MSSQLLogReader {
         System.out.print("Enter the path of the file (blank for default):");
         String folder_path = sc.nextLine();
         if (folder_path.equals("")) {
+            // C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Log
             folder_path = "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\Log";
         }
         
