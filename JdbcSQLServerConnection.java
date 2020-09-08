@@ -80,7 +80,8 @@ public class JdbcSQLServerConnection {
             }
             System.out.println("\nQuery successfully executed!");
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            System.out.println("Something doesn't seem right in your query!");            
         }
     }
     
@@ -204,16 +205,16 @@ public class JdbcSQLServerConnection {
             databaseName = "sampledb";
         }
         //Enter username
-        System.out.print("Enter Username (blank for \'ch3l\'): ");
+        System.out.print("Enter Username (blank for \'sa\'): ");
         String username = new String(sc.nextLine());
         if (username.equals("")) {
-            username = "ch3l";
+            username = "sa";
         }
         //Enter password
-        System.out.print("Enter Password (blank for \'KawaiiNeko1@#\'): ");
+        System.out.print("Enter Password (blank for \'123456\'): ");
         String password = new String(sc.nextLine());
         if (password.equals("")) {
-            password = "KawaiiNeko1@#";
+            password = "123456";
         }
         
         char key_input = 'Y';
