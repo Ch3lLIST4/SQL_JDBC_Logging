@@ -99,7 +99,6 @@ public class TraceLogMSSQL {
                 final Object[][] table = new String[4][];
                 table[0] = new String[] { "StartTime", "TextData", "LoginName", "ApplicationName" };
                 
-                int row_index = 1; 
                 while (result.next()) {
                     if (result.getString("TextData") != null) {     
                         String test = result.getString("TextData").trim();
