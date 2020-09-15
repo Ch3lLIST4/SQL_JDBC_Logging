@@ -52,7 +52,6 @@ public class TraceLogMSSQL {
             Connection conn = getConnection(ip_address, port_number, instanceName, databaseName, username, password);
             
             if (conn != null) {
-                System.out.println("Connected to the Database!");
                 
                 //Drop existing table
                 String drop_sql = new String("IF OBJECT_ID('MyTraceTable', 'U') IS NOT NULL DROP TABLE MyTraceTable");
@@ -68,7 +67,6 @@ public class TraceLogMSSQL {
                     System.out.println("Query executed but no changes were made!");
                     return false;
                 } else if (rowsInserted > 0) {
-                    System.out.println("Table created successfully!\n");
                     return true;
                 }
             } else {
@@ -316,7 +314,10 @@ public class TraceLogMSSQL {
                         String path = file.toString();
                         
                         if (createTable(path, ip_address, port_number, instanceName, databaseName, username, password)) {
+                            System.out.print(path);
+                            System.out.println("\n--------------------------------------------------------------\n");
                             searchTable(ip_address, port_number, instanceName, databaseName, username, password);
+                            System.out.println("--------------------------------------------------------------");                         
                         }
                     }
                 } else {
@@ -324,7 +325,9 @@ public class TraceLogMSSQL {
                     String path = (folder_path + "\\" + file_name);
 
                     if (createTable(path, ip_address, port_number, instanceName, databaseName, username, password)) {
+                        System.out.println("\n--------------------------------------------------------------\n");
                         searchTable(ip_address, port_number, instanceName, databaseName, username, password);
+                        System.out.println("--------------------------------------------------------------");    
                     }
                 }                
 
