@@ -94,9 +94,6 @@ public class TraceLogMSSQL {
                 Statement statement = conn.createStatement();
                 ResultSet result = statement.executeQuery(sql);
                 
-                final Object[][] table = new String[4][];
-                table[0] = new String[] { "StartTime", "TextData", "LoginName", "ApplicationName" };
-                
                 while (result.next()) {
                     if (result.getString("TextData") != null) {     
                         String test = result.getString("TextData").trim();
