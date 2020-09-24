@@ -1,11 +1,11 @@
 # Java_tools
 Some of my self made tools using Java Code
 
-- JdbcSQLServerConnection.java 
+- JdbcSQLServerConnection.java <br>
     Detect Query Type ->  Basic SQL Query
-- TraceLogMSSQL.java 
+- TraceLogMSSQL.java <br>
     Read All Trace File in folder -> Extract INSERT, DELETE, UPDATE from TextData
-- MonitorLogMSSQL.java
+- MonitorLogMSSQL.java <br>
     Monitor Transanction SQL Query using Cached Data + Testing function
-- FinalMonitorTraceLogMSSQL.java
+- FinalMonitorTraceLogMSSQL.java <br>
     Monitor Transaction SQL Query using self-generated Trace Files  
