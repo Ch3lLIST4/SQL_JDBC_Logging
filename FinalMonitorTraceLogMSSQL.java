@@ -13,6 +13,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -21,6 +24,11 @@ import java.util.Scanner;
  * @author ASUS
  */
 public class FinalMonitorTraceLogMSSQL {
+
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
     
     public static Connection getConnection(String ip_address, String port_number, 
             String instanceName, String databaseName, String username, String password) {
@@ -102,6 +110,47 @@ public class FinalMonitorTraceLogMSSQL {
             
             if (conn != null) {
                 System.out.println("\nConnected to the Database!");
+                System.out.println("\nBegin monitoring.\n-----------------------------------------------------\n");
+                
+                //create Trace
+                String create_sql = "DECLARE @RC int, @TraceID int, @on BIT\n" +
+                        "EXEC @rc = sp_trace_create @TraceID output, 0, N'D:\\SampleTrace'  \n" +
+                        "\n" +
+                        "SELECT RC = @RC, TraceID = @TraceID  \n" +
+                        "SELECT @on = 1\n" +
+                        "\n" +
+                        "EXEC sp_trace_setevent @TraceID, 11, 1, @on\n" +
+                        "EXEC sp_trace_setevent @TraceID, 11, 11, @on\n" +
+                        "EXEC sp_trace_setevent @TraceID, 11, 14, @on\n" +
+                        " \n" +
+                        "EXEC sp_trace_setevent @TraceID, 13, 1, @on   \n" +
+                        "EXEC sp_trace_setevent @TraceID, 13, 11, @on   \n" +
+                        "EXEC sp_trace_setevent @TraceID, 13, 14, @on";
+                
+                Statement create_statement = conn.createStatement();
+                
+                ResultSet result = create_statement.executeQuery(create_sql);
+                
+                //get TraceID
+                String TraceID = new String();
+                if (result.next()) {
+                    TraceID = result.getString("TraceID");
+                } else {
+                    System.out.println("Couldn't retrieve TraceID.");
+                    return null;
+                }
+                
+                //run Trace 
+                if (TraceID != null) {
+                    String trace_sql = String.format("EXEC sp_trace_setstatus %s, 1", TraceID);
+                    PreparedStatement exec_statement = conn.prepareStatement(trace_sql);
+                    
+                    exec_statement.execute();
+                    
+                } else {
+                    System.out.println("There was result but couldn't retrieve TraceID.");
+                    return null;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -109,8 +158,42 @@ public class FinalMonitorTraceLogMSSQL {
         return conn;
     }
     
-    public static void readTrace() {
+    public static String readTrace(Connection conn, String ip_addess, String port_number, 
+            String instanceName, String databaseName, String username, String password, String last_exec_time) {
         
+        String LAST_EXEC_TIME = new String();
+        
+        try {
+            String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('D:\\SampleTrace.trc', DEFAULT) \n" +
+                    "WHERE TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%' \n" +
+                    "StartTime > %s" +
+                    "ORDER BY StartTime DESC", last_exec_time);
+            
+            Statement readTrace_statement = conn.createStatement();
+                
+            ResultSet result = readTrace_statement.executeQuery(readTrace_sql);
+                       
+            if (result != null) {
+                LAST_EXEC_TIME = result.getString("StartTime");
+            }
+            while (result.next()) {
+                String StartTime = result.getString("StartTime");
+                String TextData = result.getString("TextData");
+                String LoginName = result.getString("LoginName");
+//                String EventClass = result.getString("EventClass");
+                
+                System.out.println(ANSI_RED + StartTime + ANSI_RESET + " - " 
+                        + ANSI_PURPLE + LoginName + ANSI_RESET + " - " 
+                        + TextData.replaceAll("INSERT", ANSI_BLUE + "INSERT" + ANSI_RESET)
+                                .replaceAll("UPDATE", ANSI_BLUE + "UPDATE" + ANSI_RESET)
+                                .replaceAll("DELETE", ANSI_BLUE + "DELETE" + ANSI_RESET)
+                                .replaceAll("TRUNCATE", ANSI_BLUE + "TRUNCATE" + ANSI_RESET)
+                                .replaceAll("ALTER", ANSI_BLUE + "ALTER" + ANSI_RESET));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return LAST_EXEC_TIME;
     }
     
     /**
@@ -221,6 +304,12 @@ public class FinalMonitorTraceLogMSSQL {
             }
             
             Connection conn = runTrace(ip_address, port_number, instanceName, databaseName, username, password);
+            
+            String last_exec_time = new String("0");
+            while (true) {
+                last_exec_time = readTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, last_exec_time);               
+            }      
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
