@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -305,9 +306,10 @@ public class FinalMonitorTraceLogMSSQL {
             
             Connection conn = runTrace(ip_address, port_number, instanceName, databaseName, username, password);
             
-            String last_exec_time = new String("0");
+            String last_exec_time = new String("2020-09-24 14:59:59.303");
             while (true) {
-                last_exec_time = readTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, last_exec_time);               
+                last_exec_time = readTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, last_exec_time);            
+                TimeUnit.SECONDS.sleep(5);
             }      
             
         } catch (Exception e) {
