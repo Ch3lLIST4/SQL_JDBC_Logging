@@ -182,7 +182,7 @@ public class FinalMonitorTraceLogMSSQL {
             
             String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n" +
                     "WHERE TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%' \n" +
-                    "AND StartTime > %s" +
+                    "AND StartTime > '%s'" +
                     "ORDER BY StartTime DESC", file_path, last_exec_time);
 
             Statement readTrace_statement = conn.createStatement();
@@ -212,10 +212,14 @@ public class FinalMonitorTraceLogMSSQL {
         return LAST_EXEC_TIME;
     }
     
+    public static void endTrace() {
+        
+    }
+    
     public static boolean checkFileSizeExceeds(String log_path, String file_name) {
         boolean exceeds_max = false;
         try {
-            String file_path = log_path + file_name;
+            String file_path = log_path + file_name + ".trc";
             
             File f = new File(file_path);
             long file_size = f.length();
@@ -232,7 +236,7 @@ public class FinalMonitorTraceLogMSSQL {
    public static boolean checkFileExisted(String log_path, String file_name) {
        boolean already_existed = false;
        try {
-           String file_path = log_path + file_name;
+           String file_path = log_path + file_name + ".trc";
            
            File f = new File(file_path);
            already_existed = f.exists();
@@ -358,7 +362,10 @@ public class FinalMonitorTraceLogMSSQL {
                 //1. create & run Trace File        
                 String file_name  = databaseName + "_log_" + file_index;
                     //if existed file size not maxed -> can keep input data
-                while (checkFileExisted(log_path, file_name) && checkFileSizeExceeds(log_path, file_name)) {
+                    
+                System.out.println(checkFileExisted(log_path, file_name));
+                
+                while (checkFileExisted(log_path, file_name)) {
                     file_index++;
                     file_name = databaseName + "_log_" + file_index;
                 }
