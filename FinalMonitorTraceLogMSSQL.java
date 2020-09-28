@@ -176,15 +176,15 @@ public class FinalMonitorTraceLogMSSQL {
         String LAST_EXEC_TIME = new String();
         
         try {
-            String file_path = log_path + file_name + ".trc";
+            String file_path = log_path + file_name + ".trc";    
             
-            System.out.println(file_path);
-            
-            String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n" +
+            String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n", file_path) +
                     "WHERE TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%' \n" +
-                    "AND StartTime > '%s'" +
-                    "ORDER BY StartTime DESC", file_path, last_exec_time);
-
+                    String.format("AND StartTime > '%s' \n", last_exec_time) +
+                    "ORDER BY StartTime DESC";
+            
+            System.out.println(readTrace_sql);
+            
             Statement readTrace_statement = conn.createStatement();
 
             ResultSet result = readTrace_statement.executeQuery(readTrace_sql);
@@ -361,8 +361,7 @@ public class FinalMonitorTraceLogMSSQL {
 
                 //1. create & run Trace File        
                 String file_name  = databaseName + "_log_" + file_index;
-                    //if existed file size not maxed -> can keep input data
-                    
+                            
                 System.out.println(checkFileExisted(log_path, file_name));
                 
                 while (checkFileExisted(log_path, file_name)) {
