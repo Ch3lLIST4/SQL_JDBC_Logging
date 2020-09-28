@@ -168,8 +168,7 @@ public class FinalMonitorTraceLogMSSQL {
         return conn;
     }
     
-    public static String readTrace(Connection conn, String ip_addess, String port_number, 
-            String instanceName, String databaseName, String username, String password, 
+    public static String readTrace(Connection conn, 
             String log_path, String file_name, String last_exec_time) {
         
         // LAST_EXEC_TIME temp var for retrieving most current exec time 
@@ -189,7 +188,7 @@ public class FinalMonitorTraceLogMSSQL {
 
             ResultSet result = readTrace_statement.executeQuery(readTrace_sql);
 
-            if (result != null) {
+            if (!result.isBeforeFirst()) {
                 LAST_EXEC_TIME = result.getString("StartTime");
             }
             while (result.next()) {
@@ -212,8 +211,16 @@ public class FinalMonitorTraceLogMSSQL {
         return LAST_EXEC_TIME;
     }
     
-    public static void endTrace() {
-        
+    public static void endTrace(Connection conn, String TraceID) {
+        try {
+            String stop_trace_sql = String.format("EXEC sp_trace_setstatus %s, 1", TraceID);
+            PreparedStatement exec_statement = conn.prepareStatement(stop_trace_sql);
+                    
+            exec_statement.execute();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     public static boolean checkFileSizeExceeds(String log_path, String file_name) {
@@ -373,7 +380,7 @@ public class FinalMonitorTraceLogMSSQL {
                 //2. Continuously read Trace File
                 String last_exec_time = new String("2020-09-24 14:59:59.303");
                 while (checkFileSizeExceeds(log_path, file_name) == false) {
-                    last_exec_time = readTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name, last_exec_time);            
+                    last_exec_time = readTrace(conn, log_path, file_name, last_exec_time);            
                     TimeUnit.SECONDS.sleep(5);
                 }
 
