@@ -115,6 +115,7 @@ public class FinalMonitorTraceLogMSSQL {
         try {
             String file_path = log_path + file_name;
             
+            System.out.println(file_path);
             conn = getConnection(ip_addess, port_number, instanceName, databaseName, username, password);
             
             if (conn != null) {
@@ -175,17 +176,19 @@ public class FinalMonitorTraceLogMSSQL {
         String LAST_EXEC_TIME = new String();
         
         try {
-            String file_path = log_path + file_name;
+            String file_path = log_path + file_name + ".trc";
+            
+            System.out.println(file_path);
             
             String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n" +
                     "WHERE TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%' \n" +
-                    "StartTime > %s" +
+                    "AND StartTime > %s" +
                     "ORDER BY StartTime DESC", file_path, last_exec_time);
-            
+
             Statement readTrace_statement = conn.createStatement();
-                
+
             ResultSet result = readTrace_statement.executeQuery(readTrace_sql);
-                       
+
             if (result != null) {
                 LAST_EXEC_TIME = result.getString("StartTime");
             }
@@ -250,7 +253,7 @@ public class FinalMonitorTraceLogMSSQL {
         String databaseName = "sampledb";
         String username = "sa";
         String password = "123456";
-        String log_path = "D:\\dababase_logs\\";
+        String log_path = "D:\\database_logs\\";
         
         // TODO code application logic here
         try {
@@ -351,7 +354,7 @@ public class FinalMonitorTraceLogMSSQL {
             //monitor
             int file_index = 1;
             while(true) {
-                
+
                 //1. create & run Trace File        
                 String file_name  = databaseName + "_log_" + file_index;
                     //if existed file size not maxed -> can keep input data
@@ -367,9 +370,9 @@ public class FinalMonitorTraceLogMSSQL {
                     last_exec_time = readTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name, last_exec_time);            
                     TimeUnit.SECONDS.sleep(5);
                 }
-                
+
             }
-                            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
