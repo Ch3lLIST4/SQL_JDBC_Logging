@@ -144,6 +144,7 @@ public class FinalMonitorTraceLogMSSQL {
                 //get TraceID        
                 if (result.next()) {
                     TraceID = result.getString("TraceID");
+                    System.out.println("TraceID: " + TraceID);
                 } else {
                     System.out.println("Couldn't retrieve TraceID.");
                     return null;
@@ -414,11 +415,11 @@ public class FinalMonitorTraceLogMSSQL {
             while(true) {
 
                 //1. create & run Trace File        
-                String file_name  = databaseName + "_log_" + file_index;
+                String file_name  = databaseName + "-log-" + file_index;
                 
                 while (checkFileExisted(log_path, file_name)) {
                     file_index++;
-                    file_name = databaseName + "_log_" + file_index;
+                    file_name = databaseName + "-log-" + file_index;
                 }
                 Pair<Connection, String> connAndID = runTrace(ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
 
