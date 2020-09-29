@@ -224,7 +224,7 @@ public class FinalMonitorTraceLogMSSQL {
                 
                 System.out.println(ANSI_RED + StartTime + ANSI_RESET + " - " 
                         + ANSI_GREEN + LoginName + ANSI_RESET + " - " 
-                        + TextData.replaceAll("INSERT", ANSI_BLUE + "INSERT" + ANSI_RESET)
+                        + TextData.trim().replaceAll("INSERT", ANSI_BLUE + "INSERT" + ANSI_RESET)
                                 .replaceAll("UPDATE", ANSI_BLUE + "UPDATE" + ANSI_RESET)
                                 .replaceAll("DELETE", ANSI_BLUE + "DELETE" + ANSI_RESET)
                                 .replaceAll("TRUNCATE", ANSI_BLUE + "TRUNCATE" + ANSI_RESET)
