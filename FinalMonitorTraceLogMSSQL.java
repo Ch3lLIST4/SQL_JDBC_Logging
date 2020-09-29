@@ -403,6 +403,12 @@ public class FinalMonitorTraceLogMSSQL {
             }
                   
             //monitor
+            File dir = new File(log_path);
+            boolean checkDirCreated = dir.mkdir();
+            if(checkDirCreated){
+                System.out.println("Directory created successfully");
+            }  
+            
             System.out.println("\nBegin monitoring.\n-----------------------------------------------------\n");
             int file_index = 1;   
             while(true) {
@@ -416,10 +422,10 @@ public class FinalMonitorTraceLogMSSQL {
                 }
                 Pair<Connection, String> connAndID = runTrace(ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
 
-                //2. Continuously read Trace File     
+                //2. Continuously read Trace File
                 while (!checkFileSizeExceeds(log_path, file_name)) {
-                    System.out.println(ANSI_PURPLE + last_exec_time + ANSI_RESET);
-                    last_exec_time = readTrace((Connection)connAndID.getKey(), log_path, file_name, last_exec_time);
+//                    System.out.println(ANSI_PURPLE + last_exec_time + ANSI_RESET);
+                    last_exec_time = readTrace(connAndID.getKey(), log_path, file_name, last_exec_time);
                     writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time);
                     TimeUnit.SECONDS.sleep(5);
                 }
