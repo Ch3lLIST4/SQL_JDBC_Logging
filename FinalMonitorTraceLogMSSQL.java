@@ -96,8 +96,6 @@ public class FinalMonitorTraceLogMSSQL {
 
             OutputStream output  = new FileOutputStream(log_path + "info.properties");
             properties.store(output , "Info Properties");
-
-            System.out.println("Components saved at " + log_path + "info.properties!\n");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -181,13 +179,13 @@ public class FinalMonitorTraceLogMSSQL {
                     "WHERE (TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%') \n" + 
                     "AND NOT TextData LIKE '%SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM%' \n" +
                     String.format("AND StartTime > '%s' \n", last_exec_time) +
-                    "ORDER BY StartTime DESC";
+                    "ORDER BY StartTime ASC";
             
             Statement readTrace_statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
             ResultSet result = readTrace_statement.executeQuery(readTrace_sql);
 
-            if (result.next()) {
+            if (result.last()) {
                 LAST_EXEC_TIME = result.getString("StartTime");
                 result.beforeFirst();
             }
@@ -196,6 +194,32 @@ public class FinalMonitorTraceLogMSSQL {
                 String TextData = result.getString("TextData");
                 String LoginName = result.getString("LoginName");
 //                String EventClass = result.getString("EventClass");
+
+                //count types of queries in an instance
+                int type_count = 0;
+                if (TextData.contains("INSERT")) {
+                    type_count++;        
+                }
+                if (TextData.contains("UPDATE")) {
+                    type_count++;   
+                }
+                if (TextData.contains("DELETE")) {
+                    type_count++;   
+                }
+                if (TextData.contains("TRUNCATE")) {
+                    type_count++;   
+                }
+                if (TextData.contains("ALTER")) {
+                    type_count++;   
+                }  
+                
+                if (type_count == 1) {
+                    TextData = TextData.replaceFirst(".*INSERT", "INSERT")
+                            .replaceFirst(".*UPDATE", "UPDATE")
+                            .replaceFirst(".*DELETE", "DELETE")
+                            .replaceFirst(".*TRUNCATE", "TRUNCATE")
+                            .replaceFirst(".*ALTER", "ALTER");
+                }
                 
                 System.out.println(ANSI_RED + StartTime + ANSI_RESET + " - " 
                         + ANSI_PURPLE + LoginName + ANSI_RESET + " - " 
@@ -376,13 +400,7 @@ public class FinalMonitorTraceLogMSSQL {
                 System.out.print("Do you still want to make changes ? (Y/N):");
                 key_inputs = sc.nextLine().trim();
             }
-            
-            System.out.print("Do you want to save the components for next time use ? (Y/N): ");
-            key_inputs = sc.nextLine().toUpperCase();
-            if (key_inputs.startsWith("Y")) {
-                writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, username, log_path, last_exec_time);
-            }
-            
+                  
             //monitor
             System.out.println("\nBegin monitoring.\n-----------------------------------------------------\n");
             int file_index = 1;   
