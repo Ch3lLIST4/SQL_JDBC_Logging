@@ -429,6 +429,11 @@ public class FinalMonitorTraceLogMSSQL {
                     writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time);
                     TimeUnit.SECONDS.sleep(5);
                 }
+                if (checkFileSizeExceeds(log_path, file_name)) {
+                    last_exec_time = readTrace(connAndID.getKey(), log_path, file_name, last_exec_time);
+                    writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time);
+                    TimeUnit.SECONDS.sleep(5);
+                }
                 
                 endTrace(connAndID.getKey(), connAndID.getValue());
             }
