@@ -241,7 +241,7 @@ public class FinalMonitorTraceLogMSSQL {
     
     public static void endTrace(Connection conn, String TraceID) {
         try {
-            String stop_trace_sql = String.format("EXEC sp_trace_setstatus %s, 1", TraceID);
+            String stop_trace_sql = String.format("EXEC sp_trace_setstatus %s, 0", TraceID);
             PreparedStatement exec_statement = conn.prepareStatement(stop_trace_sql);
                     
             exec_statement.execute();
