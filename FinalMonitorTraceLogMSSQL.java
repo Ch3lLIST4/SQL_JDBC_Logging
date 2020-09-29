@@ -32,6 +32,7 @@ public class FinalMonitorTraceLogMSSQL {
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_BLUE = "\u001B[34m";
     public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_GREEN = "\u001B[32m";
     
     public static int MAX_LOG_SIZE = 1000000;
     
@@ -222,7 +223,7 @@ public class FinalMonitorTraceLogMSSQL {
                 }
                 
                 System.out.println(ANSI_RED + StartTime + ANSI_RESET + " - " 
-                        + ANSI_PURPLE + LoginName + ANSI_RESET + " - " 
+                        + ANSI_GREEN + LoginName + ANSI_RESET + " - " 
                         + TextData.replaceAll("INSERT", ANSI_BLUE + "INSERT" + ANSI_RESET)
                                 .replaceAll("UPDATE", ANSI_BLUE + "UPDATE" + ANSI_RESET)
                                 .replaceAll("DELETE", ANSI_BLUE + "DELETE" + ANSI_RESET)
