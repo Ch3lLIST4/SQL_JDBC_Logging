@@ -144,7 +144,6 @@ public class FinalMonitorTraceLogMSSQL {
                 //get TraceID        
                 if (result.next()) {
                     TraceID = result.getString("TraceID");
-                    System.out.println("TraceID: " + TraceID);
                 } else {
                     System.out.println("Couldn't retrieve TraceID.");
                     return null;
