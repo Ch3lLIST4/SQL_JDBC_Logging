@@ -267,18 +267,26 @@ public class FinalMonitorTraceLogMSSQL {
         return false;
     }
     
-   public static boolean checkFileExisted(String log_path, String file_name) {
-       boolean already_existed = false;
-       try {
-           String file_path = log_path + file_name + ".trc";
-           
-           File f = new File(file_path);
-           already_existed = f.exists();
-       } catch (Exception e) {
-           e.printStackTrace();
-       }
-       return already_existed;
-   }
+    public static boolean checkFileExisted(String log_path, String file_name) {
+        boolean already_existed = false;
+        try {
+            String file_path = log_path + file_name + ".trc";
+
+            File f = new File(file_path);
+            already_existed = f.exists();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return already_existed;
+    }
+    
+    public static void delete_outdated_traces(String log_path, String file_name) {
+        try {
+            String file_path = log_path + file_name + ".trc";
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     
     /**
      * @param args the command line arguments
