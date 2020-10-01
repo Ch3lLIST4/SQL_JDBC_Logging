@@ -20,7 +20,6 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.io.File;
-import javafx.util.Pair;
 
 /**
  *
@@ -56,7 +55,7 @@ public class FinalMonitorTraceLogMSSQL {
     }    
     
     public static void initMenu(String ip_address, String port_number, 
-            String instanceName, String databaseName, String username, String password, String log_path, String last_exec_time) {
+            String instanceName, String databaseName, String username, String password, String log_path, String last_exec_time, String last_TraceID) {
         System.out.println("====================");
         System.out.println("ip_address = " + ip_address);
         System.out.println("port_number = " + port_number);
@@ -66,6 +65,7 @@ public class FinalMonitorTraceLogMSSQL {
         System.out.println("password = " + password);
         System.out.println("log_path = " + log_path);
         System.out.println("last_exec_time = " + last_exec_time);
+        System.out.println("last_TraceID = " + last_TraceID);
         System.out.println("====================");
     }
     
@@ -79,11 +79,12 @@ public class FinalMonitorTraceLogMSSQL {
         System.out.println("6. password");
         System.out.println("7. log_path");
         System.out.println("8. last_exec_time");
+        System.out.println("9. last_TraceID");
         System.out.print("Insert the number: ");
     }
     
     public static void writePropertiesFile(String ip_address, String port_number, 
-            String instanceName, String databaseName, String username, String password, String folder_path, String log_path, String last_exec_time) {
+            String instanceName, String databaseName, String username, String password, String folder_path, String log_path, String last_exec_time, String last_TraceID) {
         try {
             Properties properties = new Properties();
             properties.setProperty("ip_address", ip_address);
@@ -94,6 +95,7 @@ public class FinalMonitorTraceLogMSSQL {
             properties.setProperty("password", password);
             properties.setProperty("log_path", log_path);
             properties.setProperty("last_exec_time", last_exec_time);
+            properties.setProperty("last_TraceID", last_TraceID);
 
             OutputStream output  = new FileOutputStream(log_path + "info.properties");
             properties.store(output , "Info Properties");
@@ -112,15 +114,12 @@ public class FinalMonitorTraceLogMSSQL {
         return prop;
     }
     
-    public static Pair<Connection,String> runTrace(String ip_addess, String port_number, 
+    public static String runTrace(Connection conn, String ip_addess, String port_number, 
             String instanceName, String databaseName, String username, String password, String log_path, String file_name) {
-        Connection conn = null;  
         String TraceID = new String();
         try {
             String file_path = log_path + file_name;
-            
-            conn = getConnection(ip_addess, port_number, instanceName, databaseName, username, password);
-            
+    
             if (conn != null) {          
                 //create Trace
                 String create_sql = String.format("DECLARE @RC int, @TraceID int, @on BIT\n" +
@@ -142,8 +141,9 @@ public class FinalMonitorTraceLogMSSQL {
                 ResultSet result = create_statement.executeQuery(create_sql);
                 
                 //get TraceID        
-                if (result.next()) {
+                if (result.next()) {  
                     TraceID = result.getString("TraceID");
+                    System.out.println(file_name + " is created - TraceID: " + TraceID);
                 } else {
                     System.out.println("Couldn't retrieve TraceID.");
                     return null;
@@ -164,7 +164,7 @@ public class FinalMonitorTraceLogMSSQL {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new Pair<Connection, String>(conn, TraceID);
+        return TraceID;
     }
     
     public static String readTrace(Connection conn, 
@@ -241,12 +241,11 @@ public class FinalMonitorTraceLogMSSQL {
     
     public static void endTrace(Connection conn, String TraceID) {
         try {
-            String stop_trace_sql = String.format("EXEC sp_trace_setstatus %s, 0", TraceID);
+            String stop_trace_sql = String.format("EXEC sp_trace_setstatus %s, 0 \n"
+                    + "EXEC sp_trace_setstatus %s, 2", TraceID, TraceID);
             PreparedStatement exec_statement = conn.prepareStatement(stop_trace_sql);
                     
-            exec_statement.execute();
-            
-            conn.close();
+            exec_statement.execute();      
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -284,8 +283,7 @@ public class FinalMonitorTraceLogMSSQL {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-        
+    public static void main(String[] args) {  
         String ip_address = "localhost";
         String port_number = "1433";
         String instanceName = "MSSQLSERVER";
@@ -294,6 +292,7 @@ public class FinalMonitorTraceLogMSSQL {
         String password = "123456";
         String log_path = "D:\\database_logs\\";
         String last_exec_time = "2020-09-24 00:00:00.000";
+        String last_TraceID = "";
         
         // TODO code application logic here
         try {
@@ -311,6 +310,7 @@ public class FinalMonitorTraceLogMSSQL {
                 password = prop.getProperty("password");
                 log_path = prop.getProperty("log_path");
                 last_exec_time = prop.getProperty("last_exec_time");
+                last_TraceID = prop.getProperty("last_TraceID");
                 
                 System.out.println("Properties file loaded!");
             } catch (FileNotFoundException e) {
@@ -319,7 +319,7 @@ public class FinalMonitorTraceLogMSSQL {
                 e.printStackTrace();
             }
             
-            initMenu(ip_address, port_number, instanceName, databaseName, username, password, log_path, last_exec_time);
+            initMenu(ip_address, port_number, instanceName, databaseName, username, password, log_path, last_exec_time, last_TraceID);
             
             System.out.print("Do you want to make a change? (Y/N:)");
             String key_inputs = sc.nextLine().toUpperCase().trim();
@@ -394,23 +394,39 @@ public class FinalMonitorTraceLogMSSQL {
                             last_exec_time = "2020-09-24 00:00:00.000";
                         }
                         break;
+                    case '9':
+                        //Enter last_TraceID
+                        System.out.print("\nEnter Password (blank for \'\'): ");
+                        last_TraceID = new String(sc.nextLine());
+                        break;
                 }
                 
                 System.out.println("Successfully updated the component!\n");
-                initMenu(ip_address, port_number, instanceName, databaseName, username, password, log_path, last_exec_time);
+                initMenu(ip_address, port_number, instanceName, databaseName, username, password, log_path, last_exec_time, last_TraceID);
                 System.out.print("Do you still want to make changes ? (Y/N):");
-                key_inputs = sc.nextLine().trim();
+                key_inputs = sc.nextLine().toUpperCase().trim();
             }
                   
             //monitor
+            
+            //connect to the Database
+            Connection conn = getConnection(ip_address, port_number, instanceName, databaseName, username, password);
+            
+            //create folder if not existed
             File dir = new File(log_path);
             boolean checkDirCreated = dir.mkdir();
             if(checkDirCreated){
                 System.out.println("Directory created successfully");
             }  
             
+            //end old TraceID if existed in properties file
+            if (!(last_TraceID == "" || last_TraceID.isEmpty()) ) {
+                endTrace(conn, last_TraceID);
+                System.out.println("last_TraceID found: " + last_TraceID +". Terminating old trace.");
+            }
+            
             System.out.println("\nBegin monitoring.\n-----------------------------------------------------\n");
-            int file_index = 1;   
+            int file_index = 1;
             while(true) {
 
                 //1. create & run Trace File        
@@ -420,22 +436,22 @@ public class FinalMonitorTraceLogMSSQL {
                     file_index++;
                     file_name = databaseName + "-log-" + file_index;
                 }
-                Pair<Connection, String> connAndID = runTrace(ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
-
+                last_TraceID = runTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
+                
                 //2. Continuously read Trace File
                 while (!checkFileSizeExceeds(log_path, file_name)) {
 //                    System.out.println(ANSI_PURPLE + last_exec_time + ANSI_RESET);
-                    last_exec_time = readTrace(connAndID.getKey(), log_path, file_name, last_exec_time);
-                    writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time);
+                    last_exec_time = readTrace(conn, log_path, file_name, last_exec_time);
+                    writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time, last_TraceID);
                     TimeUnit.SECONDS.sleep(5);
                 }
                 if (checkFileSizeExceeds(log_path, file_name)) {
-                    last_exec_time = readTrace(connAndID.getKey(), log_path, file_name, last_exec_time);
-                    writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time);
+                    last_exec_time = readTrace(conn, log_path, file_name, last_exec_time);
+                    writePropertiesFile(ip_address, port_number, instanceName, databaseName, username, password, log_path, log_path, last_exec_time, last_TraceID);
                     TimeUnit.SECONDS.sleep(5);
                 }
                 
-                endTrace(connAndID.getKey(), connAndID.getValue());
+                endTrace(conn, last_TraceID);
             }
 
         } catch (Exception e) {
