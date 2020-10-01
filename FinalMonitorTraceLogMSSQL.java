@@ -20,6 +20,8 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  *
@@ -280,18 +282,19 @@ public class FinalMonitorTraceLogMSSQL {
         return already_existed;
     }
     
-    public static void delete_outdated_traces(String log_path, String file_name) {
+    public static void delete_outdated_traces(String log_path, String file_name, String databaseName, String current_date) {
         try {
-            String file_path = log_path + file_name + ".trc";
+            
+            String name_format = log_path + file_name.replaceFirst(databaseName + "-log-[\\d]+", databaseName + "-log");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
     /**
-     * @param args the command line arguments
+     * @param args the command line arguments 
      */
-    public static void main(String[] args) {  
+    public static void main(String[] args) {
         String ip_address = "localhost";
         String port_number = "1433";
         String instanceName = "MSSQLSERVER";
@@ -404,7 +407,7 @@ public class FinalMonitorTraceLogMSSQL {
                         break;
                     case '9':
                         //Enter last_TraceID
-                        System.out.print("\nEnter Password (blank for \'\'): ");
+                        System.out.print("\nEnter Last TraceID (blank for \'\'): ");
                         last_TraceID = new String(sc.nextLine());
                         break;
                 }
@@ -437,12 +440,15 @@ public class FinalMonitorTraceLogMSSQL {
             int file_index = 1;
             while(true) {
 
-                //1. create & run Trace File        
-                String file_name  = databaseName + "-log-" + file_index;
+                //1. create & run Trace File
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
+                LocalDateTime now = LocalDateTime.now();  
+                
+                String file_name  = databaseName + "-log-" + file_index + "-" + dtf.format(now);
                 
                 while (checkFileExisted(log_path, file_name)) {
                     file_index++;
-                    file_name = databaseName + "-log-" + file_index;
+                    file_name = databaseName + "-log-" + file_index + "-" + dtf.format(now);
                 }
                 last_TraceID = runTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
                 
