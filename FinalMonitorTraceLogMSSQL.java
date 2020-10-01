@@ -20,8 +20,11 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.io.File;
+import java.io.FilenameFilter;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 /**
  *
@@ -145,7 +148,7 @@ public class FinalMonitorTraceLogMSSQL {
                 //get TraceID        
                 if (result.next()) {  
                     TraceID = result.getString("TraceID");
-                    System.out.println(file_name + " is created - TraceID: " + TraceID);
+                    System.out.println(ANSI_PURPLE + file_name + " is created - TraceID: " + TraceID + ANSI_RESET);
                 } else {
                     System.out.println("Couldn't retrieve TraceID.");
                     return null;
@@ -249,7 +252,7 @@ public class FinalMonitorTraceLogMSSQL {
                     
             exec_statement.execute();      
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Coulnd't end the last TraceID. It might already be ended unexpectedly.");
         }
     }
     
@@ -282,10 +285,46 @@ public class FinalMonitorTraceLogMSSQL {
         return already_existed;
     }
     
-    public static void delete_outdated_traces(String log_path, String file_name, String databaseName, String current_date) {
+    public static File[] list_trace_files(String folder_path){      
+        File[] files = null;
         try {
-            
-            String name_format = log_path + file_name.replaceFirst(databaseName + "-log-[\\d]+", databaseName + "-log");
+            File dir = new File(folder_path);
+            files = dir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.toLowerCase().endsWith(".trc");
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }      
+        return files;
+    }
+    
+    public static void delete_outdated_traces(String log_path, String current_date) {
+        try {
+            File[] files = list_trace_files(log_path);
+            int deleted_count = 0;
+            for (File file : files) {
+                String file_name = file.getName();
+                String removed_extension = file_name.substring(0, file_name.lastIndexOf('.'));
+                String date = removed_extension.substring(removed_extension.length() - 10);
+                
+                // delete if date is actual date and < current_date           
+                if (date.matches("\\d{4}-\\d{2}-\\d{2}")) { 
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date dateDate = sdf.parse(date);
+                    Date current_dateDate = sdf.parse(current_date);
+                    
+                    if (current_dateDate.compareTo(dateDate) > 0) {
+                        if(file.delete()) {
+                            deleted_count++;
+                        }
+                    }
+                }      
+            }
+            if (deleted_count > 0){
+                System.out.println(ANSI_PURPLE + deleted_count + " outdated files deleted." + ANSI_RESET);
+            }   
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -443,12 +482,16 @@ public class FinalMonitorTraceLogMSSQL {
                 //1. create & run Trace File
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
                 LocalDateTime now = LocalDateTime.now();  
+                String current_date = dtf.format(now);
                 
-                String file_name  = databaseName + "-log-" + file_index + "-" + dtf.format(now);
+                //delete outdated traces
+                delete_outdated_traces(log_path, current_date);
+                
+                String file_name  = databaseName + "-log-" + file_index + "-" + current_date;
                 
                 while (checkFileExisted(log_path, file_name)) {
                     file_index++;
-                    file_name = databaseName + "-log-" + file_index + "-" + dtf.format(now);
+                    file_name = databaseName + "-log-" + file_index + "-" + current_date;
                 }
                 last_TraceID = runTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
                 
