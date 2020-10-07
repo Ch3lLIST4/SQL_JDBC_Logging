@@ -1,4 +1,4 @@
-## MSSQLServer_Java
+## MSSQLServer_JDBC
 Some of my simple and versatile scripts for monitoring MSSQLServer using Java Code
 
 - JdbcSQLServerConnection.java <br>
