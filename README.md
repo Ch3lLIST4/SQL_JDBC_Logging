@@ -1,5 +1,5 @@
 # Java_tools
-Some of my self made tools using Java Code
+Some of my self made tools for monitoring MSSQLServer using Java Code
 
 - JdbcSQLServerConnection.java <br>
 > Detect Query Type ->  Basic SQL Query
