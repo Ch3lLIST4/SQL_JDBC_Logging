@@ -38,7 +38,7 @@ public class FinalMonitorTraceLogMSSQL {
     public static final String ANSI_PURPLE = "\u001B[35m";
     public static final String ANSI_GREEN = "\u001B[32m";
     
-    public static int MAX_LOG_SIZE = 1000000;
+    public static int MAX_LOG_SIZE = 5_000_000; // 5,00MB
     
     public static Connection getConnection(String ip_address, String port_number, 
             String instanceName, String databaseName, String username, String password) {
@@ -146,7 +146,7 @@ public class FinalMonitorTraceLogMSSQL {
                 ResultSet result = create_statement.executeQuery(create_sql);
                 
                 //get TraceID        
-                if (result.next()) {  
+                if (result.next()) {
                     TraceID = result.getString("TraceID");
                     System.out.println(ANSI_PURPLE + file_name + " is created - TraceID: " + TraceID + ANSI_RESET);
                 } else {
@@ -182,8 +182,8 @@ public class FinalMonitorTraceLogMSSQL {
             String file_path = log_path + file_name + ".trc";    
             
             String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n", file_path) +
-                    "WHERE (TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%') \n" + 
-                    "AND NOT TextData LIKE '%SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM%' \n" +
+                    "WHERE (TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%' OR TextData LIKE '%TRUNCATE%' OR TextData LIKE '%ALTER%') \n" + 
+                    "AND NOT TextData LIKE '%SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable%' \n" +
                     String.format("AND StartTime > '%s' \n", last_exec_time) +
                     "ORDER BY StartTime ASC";
             
@@ -302,6 +302,7 @@ public class FinalMonitorTraceLogMSSQL {
     
     public static void delete_outdated_traces(String log_path, String current_date) {
         try {
+            boolean is_Admin = true;
             File[] files = list_trace_files(log_path);
             int deleted_count = 0;
             for (File file : files) {
@@ -319,9 +320,16 @@ public class FinalMonitorTraceLogMSSQL {
                         if(file.delete()) {
                             deleted_count++;
                         }
+                        else{
+                            System.out.println(ANSI_PURPLE + file + " deleted failed" + ANSI_RESET);
+                            is_Admin = false;
+                        }
                     }
                 }      
             }
+            if (!is_Admin) {
+                System.out.println(ANSI_PURPLE + "Please run this program as Administrator for auto cleaning outdated log files" + ANSI_RESET);
+            } 
             if (deleted_count > 0){
                 System.out.println(ANSI_PURPLE + deleted_count + " outdated files deleted." + ANSI_RESET);
             }   
@@ -495,7 +503,7 @@ public class FinalMonitorTraceLogMSSQL {
                 }
                 last_TraceID = runTrace(conn, ip_address, port_number, instanceName, databaseName, username, password, log_path, file_name);
                 
-                //2. Continuously read Trace File
+                //2. Consistenly read Trace File
                 while (!checkFileSizeExceeds(log_path, file_name)) {
 //                    System.out.println(ANSI_PURPLE + last_exec_time + ANSI_RESET);
                     last_exec_time = readTrace(conn, log_path, file_name, last_exec_time);
