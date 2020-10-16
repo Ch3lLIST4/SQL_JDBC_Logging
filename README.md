@@ -11,3 +11,8 @@ Some of my simple and versatile scripts for monitoring MSSQLServer using Java Co
 > Monitor Transanction SQL Query using Cached Data + Testing function
 - FinalMonitorTraceLogMSSQL.java <br>
 > Monitor Transaction SQL Query using self-generated Trace Files  
+
+
+## Screenshots
+
+<img src="https://github.com/Ch3lLIST4/MSSQLServer_JDBC/blob/master/images/mssql_logs.png" alt="sql_logs">
