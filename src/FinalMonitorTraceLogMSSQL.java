@@ -57,7 +57,7 @@ public class FinalMonitorTraceLogMSSQL {
             System.out.println("Please restart the program and re-enter the components!");
         }
         return conn;
-    }    
+    }
     
     public static void initMenu(String ip_address, String port_number, 
             String instanceName, String databaseName, String username, String password, String log_path, String last_exec_time, String last_TraceID) {
@@ -379,7 +379,7 @@ public class FinalMonitorTraceLogMSSQL {
             
             initMenu(ip_address, port_number, instanceName, databaseName, username, password, log_path, last_exec_time, last_TraceID);
             
-            System.out.print("Do you want to make a change? (Y/N:)");
+            System.out.print("Do you want to make a change? (Y/N):");
             String key_inputs = sc.nextLine().toUpperCase().trim();
             
             while (key_inputs.startsWith("Y")) {
@@ -430,7 +430,7 @@ public class FinalMonitorTraceLogMSSQL {
                         break;
                     case '6':
                         //Enter password
-                        System.out.print("\nEnter Password (blank for \'******\'): ");
+                        System.out.print("\nEnter Password (blank for \'123456\'): ");
                         password = new String(sc.nextLine());
                         if (password.equals("")) {
                             password = "123456";
