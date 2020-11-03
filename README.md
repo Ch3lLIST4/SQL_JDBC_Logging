@@ -2,6 +2,8 @@
 
 Some of my simple and versatile scripts for monitoring MSSQLServer using Java Code
 
+JDBC 8.4.1
+JDK 1.8.0
 
 - JdbcSQLServerConnection.java <br>
 > Detect Query Type ->  Basic SQL Query
