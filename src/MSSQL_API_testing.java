@@ -120,6 +120,7 @@ public class MSSQL_API_testing {
         System.out.println("username = " + username);
         System.out.println("password = " + password);
         System.out.println("log_path = " + log_path);
+        System.out.println("trace_path = " + trace_path);
         System.out.println("====================");
     }
     
@@ -471,11 +472,11 @@ public class MSSQL_API_testing {
                             log_path = ".\\tmp\\";
                         }
                     case '6':
-                        //Enter log path
+                        //Enter trace path
                         System.out.println("\nEnter Trace Path (blank for .\\\\traces\\\\): ");
-                        log_path = new String(sc.nextLine());
-                        if (log_path.equals("")) {
-                            log_path = ".\\traces\\";
+                        trace_path = new String(sc.nextLine());
+                        if (trace_path.equals("")) {
+                            trace_path = ".\\traces\\";
                         }
                 }
                 
