@@ -83,7 +83,7 @@ public class MSSQL_API_testing {
     
     public static String getCurrentTime(){
         // 2020-11-05 15:37:00.884583
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
         LocalDateTime now = LocalDateTime.now();
         return(dtf.format(now));
     }    
@@ -204,6 +204,8 @@ public class MSSQL_API_testing {
     public static boolean checkFileExisted(String file_path) {
         boolean already_existed = false;
         try {
+            file_path = file_path + ".trc";
+            
             File f = new File(file_path);
             already_existed = f.exists();
         } catch (Exception e) {
@@ -214,7 +216,9 @@ public class MSSQL_API_testing {
     
     
     public static boolean checkFileSizeExceeds(String file_path) {
-        try {   
+        try {
+            file_path = file_path + ".trc";
+            
             File f = new File(file_path);
             long file_size = f.length();
             
@@ -228,10 +232,9 @@ public class MSSQL_API_testing {
     }
     
     
-    public static String runTrace(Connection conn, String ip_addess, String port_number, 
-            String username, String password, String trace_fn) throws Exception {
+    public static String runTrace(Connection conn, String trace_fn) throws Exception {
         String TraceID = new String();
-
+        
         if (conn != null) {          
             //create Trace
             String create_sql = String.format("DECLARE @RC int, @TraceID int, @on BIT\n" +
@@ -290,7 +293,7 @@ public class MSSQL_API_testing {
             properties.setProperty("trace_path", trace_path);
             properties.setProperty("last_TraceID", last_TraceID);
 
-            OutputStream output  = new FileOutputStream(log_path + "info.properties");
+            OutputStream output  = new FileOutputStream(trace_path + "info.properties");
             properties.store(output , "Info Properties");
         } catch (Exception e) {
             e.printStackTrace();
@@ -312,6 +315,7 @@ public class MSSQL_API_testing {
     public static String readTrace(Connection conn, 
             String trace_fn, String last_exec_time) throws Exception {
         
+        trace_fn = trace_fn + ".trc";
         // LAST_EXEC_TIME temp var for retrieving most current exec time 
         String LAST_EXEC_TIME = new String();
         
@@ -396,8 +400,9 @@ public class MSSQL_API_testing {
         String port_number = "1433";
         String username = "sa";
         String password = "123456";
-        String log_path = ".\\tmp\\";
-        String trace_path = ".\\traces\\";
+        String log_path = System.getProperty("user.dir") + "\\tmp\\";
+        String trace_path = System.getProperty("user.dir") + "\\traces\\";
+        String last_TraceID = "";
         
         try {
             Scanner sc = new Scanner(System.in);
@@ -411,7 +416,7 @@ public class MSSQL_API_testing {
                 username = prop.getProperty("username");
                 password = prop.getProperty("password");
                 log_path = prop.getProperty("log_path");
-                String last_TraceID = prop.getProperty("last_TraceID");
+                last_TraceID = prop.getProperty("last_TraceID");
                 
                 System.out.println("Properties file loaded!");
             } catch (FileNotFoundException e) {
@@ -505,6 +510,12 @@ public class MSSQL_API_testing {
             // create trace folder if not existed
             create_folder(trace_path);
             
+            //end old TraceID if existed in properties file
+            if (!("".equals(last_TraceID) || last_TraceID.isEmpty()) ) {
+                endTrace(conn, last_TraceID);
+                System.out.println("last_TraceID found: " + last_TraceID +". Terminating old trace.");
+            }
+            
             System.out.println("\nBegin monitoring.\n-----------------------------------------------------\n");
             
             String last_exec_time = getCurrentTime();
@@ -520,23 +531,24 @@ public class MSSQL_API_testing {
                     //delete outdated traces
                     delete_outdated_traces(trace_path, current_date);
 
-                    String trace_fn  = trace_path + DATABASE_NAME + "-log-" + file_index + "-" + current_date + ".trc";
+                    String trace_fn  = trace_path + DATABASE_NAME + "-log-" + file_index + "-" + current_date;
 
                     while (checkFileExisted(trace_fn)) {
                         file_index++;
-                        trace_fn = trace_path + DATABASE_NAME + "-log-" + file_index + "-" + current_date + ".trc";
+                        trace_fn = trace_path + DATABASE_NAME + "-log-" + file_index + "-" + current_date;
                     }
-                    String last_TraceID = runTrace(conn, ip_address, port_number, username, password, trace_fn);
+                    last_TraceID = runTrace(conn, trace_fn);
 
                     //2. Consistenly read Trace File
                     while (!checkFileSizeExceeds(trace_fn)) {
     //                    System.out.println(ANSI_PURPLE + last_exec_time + ANSI_RESET);
-                        last_exec_time = readTrace(conn, trace_fn , last_exec_time);
+                        last_exec_time = readTrace(conn, trace_fn, last_exec_time);
                         writePropertiesFile(ip_address, port_number, username, password, log_path, trace_path, last_TraceID);
                         TimeUnit.SECONDS.sleep(TIME_OUT);
                     }
                     if (checkFileSizeExceeds(trace_fn)) {
                         last_exec_time = readTrace(conn, trace_fn, last_exec_time);
+                        writePropertiesFile(ip_address, port_number, username, password, log_path, trace_path, last_TraceID);
                         TimeUnit.SECONDS.sleep(TIME_OUT);
                     }
 
@@ -545,6 +557,7 @@ public class MSSQL_API_testing {
                     if (conn != null) {
                         conn.close();
                     }
+                    e.printStackTrace();
                     System.out.println("Lost connection to DB. Trying to reconnect..");
                     try {
                         conn = getConnection(ip_address, port_number, username, password);
