@@ -7,14 +7,20 @@
 
 package mssql_api_testing;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,7 +30,9 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -319,9 +327,9 @@ public class MSSQL_API_testing {
         // LAST_EXEC_TIME temp var for retrieving most current exec time 
         String LAST_EXEC_TIME = new String();
         
-        String readTrace_sql = String.format("SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n", trace_fn) +
+        String readTrace_sql = String.format("SELECT TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable('%s', DEFAULT) \n", trace_fn) +
                 "WHERE (TextData LIKE '%INSERT%' OR TextData LIKE '%UPDATE%' OR TextData LIKE '%DELETE%' OR TextData LIKE '%TRUNCATE%' OR TextData LIKE '%ALTER%') \n" + 
-                "AND NOT TextData LIKE '%SELECT TOP 10 TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable%' \n" +
+                "AND NOT TextData LIKE '%SELECT TextData, LoginName, StartTime, EventClass FROM fn_trace_gettable%' \n" +
                 String.format("AND StartTime > '%s' \n", last_exec_time) +
                 "ORDER BY StartTime ASC";
 
@@ -333,12 +341,24 @@ public class MSSQL_API_testing {
             LAST_EXEC_TIME = result.getString("StartTime");
             result.beforeFirst();
         }
+        
+        // creating var
+        List<JSONObject> obj_queriesArray = new ArrayList<JSONObject>();
+            
         while (result.next()) {
+            JSONObject obj_query = new JSONObject();
+            
             String StartTime = result.getString("StartTime");
             String TextData = result.getString("TextData");
             String LoginName = result.getString("LoginName");
-//                String EventClass = result.getString("EventClass");
-
+            String EventClass = result.getString("EventClass");
+            
+            obj_query.put("StartTime", StartTime);
+            obj_query.put("TextData", TextData);
+            obj_query.put("LoginName", LoginName);
+            obj_query.put("EventClass", EventClass);
+            obj_queriesArray.add(obj_query);
+                
             //count types of queries in an instance
             int type_count = 0;
             if (TextData.contains("INSERT")) {
@@ -373,7 +393,10 @@ public class MSSQL_API_testing {
                             .replaceAll("TRUNCATE", ANSI_BLUE + "TRUNCATE" + ANSI_RESET)
                             .replaceAll("ALTER", ANSI_BLUE + "ALTER" + ANSI_RESET));
         }
-
+        
+        // putting queries obj to main obj
+        obj_main.put("queries", obj_queriesArray);
+            
         if (LAST_EXEC_TIME == null || LAST_EXEC_TIME.isEmpty()){
             LAST_EXEC_TIME = last_exec_time;
         }
@@ -390,6 +413,115 @@ public class MSSQL_API_testing {
             exec_statement.execute();      
         } catch (Exception e) {
             System.out.println("Coulnd't end the last TraceID. It might already be ended unexpectedly.");
+        }
+    }
+    
+    
+    public static void prettyPrintJSON(JSONObject obj_main) {
+        try {
+            System.out.println("");
+            System.out.println(ANSI_RED + getCurrentTime() + ANSI_RESET);
+            System.out.println(obj_main.toString(4));
+            System.out.println("");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+    public static void sendMockData(JSONObject obj_main, StringBuilder response) throws Exception{
+        URL url = new URL (API_URL);
+        HttpURLConnection con = (HttpURLConnection)url.openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; utf-8");
+        con.setRequestProperty("Accept", "application/json");
+        con.setDoOutput(true);
+
+        String jsonInputString = obj_main.toString(4);
+
+        // Create the Request Body
+        try(OutputStream os = con.getOutputStream()) {
+            byte[] input = jsonInputString.getBytes("utf-8");
+            os.write(input, 0, input.length);			
+        }
+        // Read the Response from Input Stream
+        try(BufferedReader br = new BufferedReader(
+            new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+            System.out.println(response.toString());
+        }
+    }
+    
+    
+    public static int count_lines_in_file(String file_name) {
+        int lines = 0;
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file_name));
+            while (reader.readLine() != null) lines++;
+            reader.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return lines;
+    }
+    
+    
+    public static String create_log_file(String folder_path, String databaseName) {
+        long file_index = 0;
+        String file_name = new String();
+        try {
+            while(true) {
+                file_name = folder_path + databaseName + "_" + file_index + ".txt";
+
+                File fn = new File(file_name);
+                if (fn.createNewFile()) {
+                    System.out.println("File created: " + file_name);
+                    break;
+                } else {
+                    System.out.println("File " + file_name + " already exists.");
+                    file_index++;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return file_name;
+    }
+    
+    
+    public static void write_to_file(String file_name, JSONObject log_obj) {
+        int count = count_lines_in_file(file_name) + 1;
+        try {
+            FileWriter writer = new FileWriter(file_name, true);
+            
+            writer.write(count + " | " + obj_main.toString() + "\n");
+            
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+    public static void skipLines(Scanner s,int lineNum){
+        for(int i = 0; i < lineNum;i++){
+            if(s.hasNextLine())s.nextLine();
+        }
+    }
+    
+    
+    public static boolean check_mock_connection() {
+        try {
+            URL url = new URL (API_URL);
+            HttpURLConnection con = (HttpURLConnection)url.openConnection();
+            con.getInputStream();
+            
+            return true;
+        } catch (Exception ignore){
+            return false;
         }
     }
     
@@ -519,18 +651,21 @@ public class MSSQL_API_testing {
             System.out.println("\nBegin monitoring.\n-----------------------------------------------------\n");
             
             String last_exec_time = getCurrentTime();
+            StringBuilder response = new StringBuilder();
+            
             int file_index = 1;
             while(true) {
                 
                 try {
-                    //1. create & run Trace File
+                    //1. create Trace File
                     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
                     LocalDateTime now = LocalDateTime.now();  
                     String current_date = dtf.format(now);
 
                     //delete outdated traces
                     delete_outdated_traces(trace_path, current_date);
-
+                    
+                    //2. run Trace file
                     String trace_fn  = trace_path + DATABASE_NAME + "-log-" + file_index + "-" + current_date;
 
                     while (checkFileExisted(trace_fn)) {
@@ -539,25 +674,34 @@ public class MSSQL_API_testing {
                     }
                     last_TraceID = runTrace(conn, trace_fn);
 
-                    //2. Consistenly read Trace File
+                    //3. Consistently read Trace File
                     while (!checkFileSizeExceeds(trace_fn)) {
     //                    System.out.println(ANSI_PURPLE + last_exec_time + ANSI_RESET);
                         last_exec_time = readTrace(conn, trace_fn, last_exec_time);
+                        
+                        prettyPrintJSON(obj_main);
+                        sendMockData(obj_main, response);
+                        response = new StringBuilder();
+                        
                         writePropertiesFile(ip_address, port_number, username, password, log_path, trace_path, last_TraceID);
                         TimeUnit.SECONDS.sleep(TIME_OUT);
                     }
                     if (checkFileSizeExceeds(trace_fn)) {
                         last_exec_time = readTrace(conn, trace_fn, last_exec_time);
+                        
+                        prettyPrintJSON(obj_main);
+                        sendMockData(obj_main, response);
+                        response = new StringBuilder();
+                        
                         writePropertiesFile(ip_address, port_number, username, password, log_path, trace_path, last_TraceID);
                         TimeUnit.SECONDS.sleep(TIME_OUT);
                     }
-
+                    
                     endTrace(conn, last_TraceID);
                 } catch (SQLException e) {
                     if (conn != null) {
                         conn.close();
                     }
-                    e.printStackTrace();
                     System.out.println("Lost connection to DB. Trying to reconnect..");
                     try {
                         conn = getConnection(ip_address, port_number, username, password);
@@ -565,7 +709,27 @@ public class MSSQL_API_testing {
                     }
                     TimeUnit.SECONDS.sleep(RECONNECTION_TIME_OUT);
                 } catch (Exception e) {
-                    System.out.println(e);
+                    if (response.toString().equals("")){
+                        System.out.println("Lost connection to Mock Server. Saving queries as log files for later transfer..");
+                        
+                        // Logging queries
+                        
+                        // create log folder if not existed
+                        create_folder(log_path);
+                        
+                        // if exceeds log size -> create new log file
+                        if (lastest_file_name.isEmpty() || count_lines_in_file(lastest_file_name) >= MAX_QUERIES_IN_FILE) {
+                            String file_name = create_log_file(log_path, DATABASE_NAME);
+                            lastest_file_name = file_name;
+                        }             
+                        
+                        // write log to file
+                        write_to_file(lastest_file_name, obj_main);
+                        
+                    } else {
+                        System.out.println(e);
+                    }
+                    TimeUnit.SECONDS.sleep(RECONNECTION_TIME_OUT);
                 }
                 
             }
