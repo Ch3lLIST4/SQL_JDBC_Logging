@@ -309,10 +309,10 @@ public class MSSQL_API_testing {
     }
     
     
-    public static Properties loadPropertiesFile(String log_path) throws Exception {
+    public static Properties loadPropertiesFile(String trace_path) throws Exception {
         Properties prop = new Properties();
 
-        InputStream input = new FileInputStream(log_path + "info.properties");          
+        InputStream input = new FileInputStream(trace_path + "info.properties");          
 
         prop.load(input);
         
