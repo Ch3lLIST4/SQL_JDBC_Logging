@@ -541,7 +541,7 @@ public class MSSQL_API_testing {
             
             //Load properties file
             try {
-                Properties prop = loadPropertiesFile(log_path);
+                Properties prop = loadPropertiesFile(trace_path);
                 
                 ip_address = prop.getProperty("ip_address");
                 port_number = prop.getProperty("port_number");
