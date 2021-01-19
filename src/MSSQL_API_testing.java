@@ -531,8 +531,8 @@ public class MSSQL_API_testing {
         String port_number = "1433";
         String username = "sa";
         String password = "123456";
-        String log_path = ".\\tmp\\";
-        String trace_path = ".\\traces\\";
+        String log_path = ".\\MSSQL_logs\\";
+        String trace_path = "D:\\MSSQL_traces\\";
         String last_TraceID = "";
         
         try {
@@ -602,18 +602,18 @@ public class MSSQL_API_testing {
                         break;
                     case '5':
                         //Enter log path
-                        System.out.println("\nEnter Log Path (blank for .\\\\tmp\\\\): ");
+                        System.out.print("\nEnter Log Path (blank for .\\MSSQL_logs\\): ");
                         log_path = new String(sc.nextLine());
                         if (log_path.equals("")) {
-                            log_path = ".\\tmp\\";
+                            log_path = ".\\MSSQL_logs\\";
                         }
                         break;
                     case '6':
                         //Enter trace path
-                        System.out.println("\nEnter Trace Path (blank for .\\\\traces\\\\): ");
+                        System.out.print("\nEnter Trace Path (blank for D:\\MSSQL_traces\\): ");
                         trace_path = new String(sc.nextLine());
                         if (trace_path.equals("")) {
-                            trace_path = ".\\traces\\";
+                            trace_path = "D:\\MSSQL_traces\\";
                         }
                         break;
                 }
