@@ -15,7 +15,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -532,8 +531,8 @@ public class MSSQL_API_testing {
         String port_number = "1433";
         String username = "sa";
         String password = "123456";
-        String log_path = System.getProperty("user.dir") + "\\tmp\\";
-        String trace_path = System.getProperty("user.dir") + "\\traces\\";
+        String log_path = ".\\tmp\\";
+        String trace_path = ".\\traces\\";
         String last_TraceID = "";
         
         try {
@@ -608,6 +607,7 @@ public class MSSQL_API_testing {
                         if (log_path.equals("")) {
                             log_path = ".\\tmp\\";
                         }
+                        break;
                     case '6':
                         //Enter trace path
                         System.out.println("\nEnter Trace Path (blank for .\\\\traces\\\\): ");
@@ -615,6 +615,7 @@ public class MSSQL_API_testing {
                         if (trace_path.equals("")) {
                             trace_path = ".\\traces\\";
                         }
+                        break;
                 }
                 
                 System.out.println("Successfully updated the component!\n");
