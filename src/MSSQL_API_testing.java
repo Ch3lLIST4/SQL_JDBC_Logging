@@ -298,7 +298,9 @@ public class MSSQL_API_testing {
             properties.setProperty("password", password);
             properties.setProperty("log_path", log_path);
             properties.setProperty("trace_path", trace_path);
-            properties.setProperty("last_TraceID", last_TraceID);
+            if (!(last_TraceID.isEmpty() || "".equals(last_TraceID))) {
+                properties.setProperty("last_TraceID", last_TraceID);
+            }
 
             OutputStream output  = new FileOutputStream(trace_path + "info.properties");
             properties.store(output , "Info Properties");
@@ -625,6 +627,9 @@ public class MSSQL_API_testing {
             }
             
             // monitor
+            
+            // save user properties
+            writePropertiesFile(ip_address, port_number, username, password, log_path, trace_path, last_TraceID);
             
             // connect to the Database
             Connection conn = null;
