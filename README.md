@@ -18,3 +18,11 @@ JDK 1.8.0
 ## Screenshots
 
 <img src="https://github.com/Ch3lLIST4/MSSQLServer_JDBC/blob/master/images/mssql_logs.png" alt="sql_logs">
+
+
+
+## MySQL_JDBC
+
+Scripts for monitoring MySQL using Java
+
+Connector-J-8.0.21 JDK 1.8.0_111
